@@ -11,9 +11,9 @@ function ReclaimDemo() {
   const getVerificationReq = async () => {
     // Your credentials from the Reclaim Developer Portal
     // Replace these with your actual credentials
-    const APP_ID = '0xf02a8Ac9acfA885399226a5ac876F574b9610eF4';
-    const APP_SECRET = '0x7a24eeaea36722b0ba6c30fd314b10ce78c81355c1f9764fd72d76279adf0f90';
-    const PROVIDER_ID = 'eacb5507-be7d-4f4c-9887-3a768e082d1a';
+    const APP_ID = process.env.APP_ID;
+    const APP_SECRET = process.env.APP_SECRET;
+    const PROVIDER_ID = process.env.PROVIDER_ID;
  
     // Initialize the Reclaim SDK with your credentials
     const reclaimProofRequest = await ReclaimProofRequest.init(APP_ID, APP_SECRET, PROVIDER_ID);
