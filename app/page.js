@@ -38,6 +38,7 @@ function ReclaimDemo() {
       onError: (error) => {
         console.error('Verification failed', error);
  
+        
         // Add your error handling logic here, such as:
         // - Showing error message to user
         // - Resetting verification state
