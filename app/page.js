@@ -1,134 +1,202 @@
 'use client'
-import { useState } from 'react';
-import QRCode from 'react-qr-code';
-import { ReclaimProofRequest } from '@reclaimprotocol/js-sdk';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
- 
-function ReclaimDemo() {
-  // State management
-  const [requestUrl, setRequestUrl] = useState('');
-  const [proofs, setProofs] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
- 
-  const getVerificationReq = async () => {
-    try {
-      // Loading and reset logic remains the same as in previous example
-      setIsLoading(true);
-      setRequestUrl('');
-      setProofs([]);
+import React, { 
+  useState, 
+  useCallback, 
+  useMemo, 
+  useRef, 
+  Suspense, 
+  lazy 
+} from 'react';
+import dynamic from 'next/dynamic';
+import { 
+  usePerformanceOptimization, 
+  useErrorHandler 
+} from '@/hooks/optimization-hooks';
 
-      // Existing verification logic
-      const reclaimProofRequest = await ReclaimProofRequest.init(
-        process.env.NEXT_PUBLIC_APP_ID, 
-        process.env.NEXT_PUBLIC_APP_SECRET, 
-        process.env.NEXT_PUBLIC_PROVIDER_ID
-      );
- 
-      const requestUrl = await reclaimProofRequest.getRequestUrl();
-      console.log('Request URL:', requestUrl);
-      setRequestUrl(requestUrl);
- 
-      await reclaimProofRequest.startSession({
+// Dynamically import heavy components
+const QRCode = dynamic(() => import('react-qr-code'), {
+  loading: () => <div className="w-64 h-64 bg-gray-200 animate-pulse"></div>,
+  ssr: false
+});
+
+const ToastContainer = dynamic(() => 
+  import('react-toastify').then(mod => mod.ToastContainer),
+  { ssr: false }
+);
+
+// Performance-optimized Reclaim Verification Component
+function ReclaimDemo() {
+  // Performance Tracking Hooks
+  const { 
+    trackRender, 
+    trackOperation 
+  } = usePerformanceOptimization('ReclaimDemo');
+
+  // Error Handling Hook
+  const { 
+    handleError, 
+    ErrorFallback 
+  } = useErrorHandler();
+
+  // Refs for memoization and performance
+  const reclaimRequestRef = useRef<any>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Optimized State Management
+  const [verificationState, setVerificationState] = useState({
+    requestUrl: '',
+    proofs: [],
+    status: 'idle', // 'idle' | 'loading' | 'success' | 'error'
+    error: null
+  });
+
+  // Memoized Verification Request
+  const getVerificationReq = useCallback(async () => {
+    // Start performance tracking
+    const startTime = performance.now();
+
+    // Create abort controller for request cancellation
+    abortControllerRef.current = new AbortController();
+
+    try {
+      // Update state with loading status
+      setVerificationState(prev => ({
+        ...prev, 
+        status: 'loading', 
+        error: null
+      }));
+
+      // Validate environment variables
+      if (!process.env.NEXT_PUBLIC_APP_ID) {
+        throw new Error('Missing Reclaim Protocol credentials');
+      }
+
+      // Use memoized request instance
+      if (!reclaimRequestRef.current) {
+        reclaimRequestRef.current = await ReclaimProofRequest.init(
+          process.env.NEXT_PUBLIC_APP_ID,
+          process.env.NEXT_PUBLIC_APP_SECRET,
+          process.env.NEXT_PUBLIC_PROVIDER_ID
+        );
+      }
+
+      // Generate verification URL with timeout
+      const requestUrl = await Promise.race([
+        reclaimRequestRef.current.getRequestUrl(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Request Timeout')), 10000)
+        )
+      ]);
+
+      // Start session with optimized handling
+      await reclaimRequestRef.current.startSession({
         onSuccess: (proofs) => {
-          setProofs(proofs);
-          toast.success('Verification Completed Successfully!', {
-            position: "top-right",
-            autoClose: 3000,
-          });
+          setVerificationState(prev => ({
+            ...prev,
+            status: 'success',
+            proofs,
+            requestUrl
+          }));
+
+          // Track operation performance
+          trackOperation('verification_success', performance.now() - startTime);
         },
         onError: (error) => {
-          console.error('Verification failed', error);
-          toast.error(`Verification Failed: ${error.message}`, {
-            position: "top-right",
-            autoClose: 5000,
-          });
-          setRequestUrl('');
-          setProofs([]);
+          setVerificationState(prev => ({
+            ...prev,
+            status: 'error',
+            error: error.message
+          }));
+
+          // Track operation performance
+          trackOperation('verification_error', performance.now() - startTime);
         },
+        signal: abortControllerRef.current?.signal
       });
     } catch (error) {
-      console.error('Verification request error', error);
-      toast.error(`Error Initiating Verification: ${error.message}`, {
-        position: "top-right",
-        autoClose: 5000,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
- 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
-      <ToastContainer />
+      // Centralized error handling
+      handleError(error);
       
-      <div className="w-full max-w-md bg-white shadow-2xl rounded-2xl overflow-hidden border border-blue-100">
-        {/* Header */}
-        <div className="bg-blue-500 text-white p-6 text-center">
-          <h1 className="text-2xl font-bold">Reclaim Protocol Verification</h1>
-          <p className="text-sm text-blue-100 mt-2">
-            Secure and privacy-preserving identity verification
-          </p>
-        </div>
+      setVerificationState(prev => ({
+        ...prev,
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }));
+    }
+  }, [handleError, trackOperation]);
 
-        {/* Main Content */}
-        <div className="p-6 space-y-6">
-          {/* Verification Button */}
-          <button 
-            onClick={getVerificationReq} 
-            disabled={isLoading}
-            className={`
-              w-full py-3 rounded-lg transition-all duration-300 ease-in-out 
-              text-white font-semibold tracking-wider uppercase
-              ${isLoading 
-                ? 'bg-gray-400 cursor-not-allowed' 
-                : 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg'
-              }
-            `}
-          >
-            {isLoading ? 'Initiating Verification...' : 'Start Verification'}
-          </button>
+  // Memoized derived values
+  const verificationDetails = useMemo(() => {
+    if (verificationState.status === 'success') {
+      return {
+        totalProofs: verificationState.proofs.length,
+        verificationTime: new Date().toLocaleString()
+      };
+    }
+    return null;
+  }, [verificationState.status, verificationState.proofs]);
 
-          {/* QR Code Section */}
-          {requestUrl && (
-            <div className="text-center space-y-4">
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                <p className="text-sm text-blue-600 mb-3">
-                  Scan QR Code to Complete Verification
-                </p>
-                <div className="flex justify-center">
-                  <div className="p-2 bg-white rounded-xl shadow-md">
-                    <QRCode 
-                      value={requestUrl} 
-                      size={256}
-                      className="mx-auto"
-                    />
-                  </div>
-                </div>
+  // Render optimization
+  const renderContent = useCallback(() => {
+    switch(verificationState.status) {
+      case 'loading':
+        return (
+          <div className="animate-pulse">
+            <div className="h-10 bg-gray-300 rounded"></div>
+          </div>
+        );
+      case 'success':
+        return (
+          <div className="space-y-4">
+            {verificationState.requestUrl && (
+              <div className="flex justify-center">
+                <QRCode value={verificationState.requestUrl} />
               </div>
-            </div>
-          )}
+            )}
+            {verificationDetails && (
+              <div>
+                <p>Proofs: {verificationDetails.totalProofs}</p>
+                <p>Verified at: {verificationDetails.verificationTime}</p>
+              </div>
+            )}
+          </div>
+        );
+      case 'error':
+        return (
+          <div className="text-red-500">
+            {verificationState.error}
+          </div>
+        );
+      default:
+        return null;
+    }
+  }, [verificationState, verificationDetails]);
 
-          {/* Proofs Display */}
-          {proofs.length > 0 && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <h2 className="text-lg font-bold text-green-700 mb-3">
-                ✓ Verification Successful
-              </h2>
-              <pre className="bg-white p-3 rounded-md text-xs overflow-x-auto text-gray-800 shadow-inner">
-                {JSON.stringify(proofs, null, 2)}
-              </pre>
-            </div>
-          )}
-        </div>
+  // Render with performance tracking
+  trackRender();
 
-        {/* Footer */}
-        <div className="bg-blue-50 p-4 text-center text-xs text-blue-600">
-          Powered by Reclaim Protocol
-        </div>
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <div className="container mx-auto">
+        <button 
+          onClick={getVerificationReq}
+          disabled={verificationState.status === 'loading'}
+          className="w-full btn btn-primary"
+        >
+          {verificationState.status === 'loading' 
+            ? 'Verifying...' 
+            : 'Start Verification'}
+        </button>
+
+        {renderContent()}
+
+        <ToastContainer />
+        
+        {/* Error Boundary Fallback */}
+        <ErrorFallback />
       </div>
-    </div>
+    </Suspense>
   );
 }
 
-export default ReclaimDemo;
+export default React.memo(ReclaimDemo);
