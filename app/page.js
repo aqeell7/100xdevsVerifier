@@ -1,34 +1,34 @@
 'use client'
-import React, { 
-  useState, 
-  useCallback, 
-  useMemo, 
-  useRef 
-} from 'react';
-import dynamic from 'next/dynamic';
+import React, { useState, useCallback, useMemo } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
+import dynamic from 'next/dynamic';
+
+// Dynamically import heavy components
+const QRCode = dynamic(() => import('react-qr-code'), { ssr: false });
 
 function ReclaimVerificationDemo() {
-  // Verification state management
+  // Consolidated state management with more robust initial state
   const [state, setState] = useState({
     requestUrl: '',
     proofs: [],
-    status: 'idle', // Possible values: 'idle', 'loading', 'success', 'error'
+    status: 'idle',
     error: null
   });
 
-  // Memoized verification request handler
+  // Enhanced verification request with improved error handling
   const initiateVerification = useCallback(async () => {
-    // Reset state and prepare for new verification
+    // Validate environment variables upfront
+    const requiredEnvs = ['NEXT_PUBLIC_APP_ID', 'NEXT_PUBLIC_APP_SECRET', 'NEXT_PUBLIC_PROVIDER_ID'];
+    const missingEnvs = requiredEnvs.filter(env => !process.env[env]);
+    
+    if (missingEnvs.length) {
+      toast.error(`Missing environment variables: ${missingEnvs.join(', ')}`);
+      return;
+    }
+
     setState(prev => ({ ...prev, status: 'loading', error: null }));
 
     try {
-      // Validate and initialize Reclaim Protocol
-      if (!process.env.NEXT_PUBLIC_APP_ID) {
-        throw new Error('Missing Reclaim Protocol credentials');
-      }
-
-      // Generate verification request
       const reclaimRequest = await ReclaimProofRequest.init(
         process.env.NEXT_PUBLIC_APP_ID,
         process.env.NEXT_PUBLIC_APP_SECRET,
@@ -37,7 +37,6 @@ function ReclaimVerificationDemo() {
 
       const requestUrl = await reclaimRequest.getRequestUrl();
 
-      // Start verification session
       await reclaimRequest.startSession({
         onSuccess: (proofs) => {
           setState({
@@ -58,58 +57,50 @@ function ReclaimVerificationDemo() {
         }
       });
     } catch (error) {
-      // Handle unexpected errors
       setState({
         status: 'error',
         requestUrl: '',
         proofs: [],
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error.message || 'Unknown error'
       });
-      toast.error('Verification process encountered an error');
+      toast.error('Verification process failed');
     }
   }, []);
 
-  // Memoized verification details
-  const verificationDetails = useMemo(() => {
-    if (state.status === 'success') {
-      return {
-        proofCount: state.proofs.length,
-        verifiedAt: new Date().toLocaleString()
-      };
-    }
-    return null;
-  }, [state.status, state.proofs]);
+  // Memoized verification details with more concise logic
+  const verificationDetails = useMemo(() => 
+    state.status === 'success' 
+      ? {
+          proofCount: state.proofs.length,
+          verifiedAt: new Date().toLocaleString()
+        } 
+      : null, 
+    [state.status, state.proofs]
+  );
 
-  // Render based on verification status
+  // Simplified rendering logic with early returns
   const renderVerificationContent = () => {
-    switch (state.status) {
-      case 'loading':
-        return <div className="animate-pulse">Verifying...</div>;
-      case 'success':
-        return (
-          <div className="space-y-4">
-            {state.requestUrl && (
-              <div className="flex justify-center">
-                <QRCode value={state.requestUrl} />
-              </div>
-            )}
-            {verificationDetails && (
-              <div className="text-center">
-                <p>Proofs Collected: {verificationDetails.proofCount}</p>
-                <p>Verified at: {verificationDetails.verifiedAt}</p>
-              </div>
-            )}
-          </div>
-        );
-      case 'error':
-        return (
-          <div className="text-red-500 text-center">
-            {state.error || 'Verification Failed'}
-          </div>
-        );
-      default:
-        return null;
-    }
+    const contentMap = {
+      loading: <div className="animate-pulse">Verifying...</div>,
+      success: (
+        <div className="space-y-4">
+          {state.requestUrl && <QRCode value={state.requestUrl} />}
+          {verificationDetails && (
+            <div className="text-center">
+              <p>Proofs: {verificationDetails.proofCount}</p>
+              <p>Verified: {verificationDetails.verifiedAt}</p>
+            </div>
+          )}
+        </div>
+      ),
+      error: (
+        <div className="text-red-500 text-center">
+          {state.error || 'Verification Failed'}
+        </div>
+      )
+    };
+
+    return contentMap[state.status] || null;
   };
 
   return (
@@ -134,5 +125,4 @@ function ReclaimVerificationDemo() {
   );
 }
 
-// Memoize the component to prevent unnecessary re-renders
 export default React.memo(ReclaimVerificationDemo);
