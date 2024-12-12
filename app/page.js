@@ -35,8 +35,8 @@ function ReclaimVerificationDemo() {
   const [state, setState] = useState({
     requestUrl: '',
     proofs: [],
-    status: 'idle' as 'idle' | 'loading' | 'success' | 'error',
-    error: null as string | null
+    status: 'idle', // Possible values: 'idle', 'loading', 'success', 'error'
+    error: null
   });
 
   // Memoized verification request handler
