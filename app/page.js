@@ -3,200 +3,158 @@ import React, {
   useState, 
   useCallback, 
   useMemo, 
-  useRef, 
-  Suspense, 
-  lazy 
+  useRef 
 } from 'react';
 import dynamic from 'next/dynamic';
-import { 
-  usePerformanceOptimization, 
-  useErrorHandler 
-} from '@/hooks/optimization-hooks';
+import { toast, ToastContainer } from 'react-toastify';
 
-// Dynamically import heavy components
-const QRCode = dynamic(() => import('react-qr-code'), {
-  loading: () => <div className="w-64 h-64 bg-gray-200 animate-pulse"></div>,
-  ssr: false
-});
-
-const ToastContainer = dynamic(() => 
-  import('react-toastify').then(mod => mod.ToastContainer),
-  { ssr: false }
-);
-
-// Performance-optimized Reclaim Verification Component
-function ReclaimDemo() {
-  // Performance Tracking Hooks
-  const { 
-    trackRender, 
-    trackOperation 
-  } = usePerformanceOptimization('ReclaimDemo');
-
-  // Error Handling Hook
-  const { 
-    handleError, 
-    ErrorFallback 
-  } = useErrorHandler();
-
-  // Refs for memoization and performance
-  const reclaimRequestRef = useRef<any>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
-
-  // Optimized State Management
-  const [verificationState, setVerificationState] = useState({
+/**
+ * Reclaim Protocol Identity Verification Component
+ * 
+ * @description
+ * This component provides a streamlined, secure identity verification process using Reclaim Protocol.
+ * 
+ * Key Features:
+ * - Dynamic QR Code generation for identity verification
+ * - Comprehensive error handling
+ * - Performance-optimized state management
+ * - Real-time verification status tracking
+ * 
+ * Workflow:
+ * 1. User initiates verification
+ * 2. QR Code generated for mobile verification
+ * 3. Proofs collected and displayed upon successful verification
+ * 
+ * @requires 
+ * - Reclaim Protocol SDK
+ * - react-toastify for notifications
+ * - Tailwind CSS for styling
+ */
+function ReclaimVerificationDemo() {
+  // Verification state management
+  const [state, setState] = useState({
     requestUrl: '',
     proofs: [],
-    status: 'idle', // 'idle' | 'loading' | 'success' | 'error'
-    error: null
+    status: 'idle' as 'idle' | 'loading' | 'success' | 'error',
+    error: null as string | null
   });
 
-  // Memoized Verification Request
-  const getVerificationReq = useCallback(async () => {
-    // Start performance tracking
-    const startTime = performance.now();
-
-    // Create abort controller for request cancellation
-    abortControllerRef.current = new AbortController();
+  // Memoized verification request handler
+  const initiateVerification = useCallback(async () => {
+    // Reset state and prepare for new verification
+    setState(prev => ({ ...prev, status: 'loading', error: null }));
 
     try {
-      // Update state with loading status
-      setVerificationState(prev => ({
-        ...prev, 
-        status: 'loading', 
-        error: null
-      }));
-
-      // Validate environment variables
+      // Validate and initialize Reclaim Protocol
       if (!process.env.NEXT_PUBLIC_APP_ID) {
         throw new Error('Missing Reclaim Protocol credentials');
       }
 
-      // Use memoized request instance
-      if (!reclaimRequestRef.current) {
-        reclaimRequestRef.current = await ReclaimProofRequest.init(
-          process.env.NEXT_PUBLIC_APP_ID,
-          process.env.NEXT_PUBLIC_APP_SECRET,
-          process.env.NEXT_PUBLIC_PROVIDER_ID
-        );
-      }
+      // Generate verification request
+      const reclaimRequest = await ReclaimProofRequest.init(
+        process.env.NEXT_PUBLIC_APP_ID,
+        process.env.NEXT_PUBLIC_APP_SECRET,
+        process.env.NEXT_PUBLIC_PROVIDER_ID
+      );
 
-      // Generate verification URL with timeout
-      const requestUrl = await Promise.race([
-        reclaimRequestRef.current.getRequestUrl(),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Request Timeout')), 10000)
-        )
-      ]);
+      const requestUrl = await reclaimRequest.getRequestUrl();
 
-      // Start session with optimized handling
-      await reclaimRequestRef.current.startSession({
+      // Start verification session
+      await reclaimRequest.startSession({
         onSuccess: (proofs) => {
-          setVerificationState(prev => ({
-            ...prev,
+          setState({
             status: 'success',
             proofs,
-            requestUrl
-          }));
-
-          // Track operation performance
-          trackOperation('verification_success', performance.now() - startTime);
+            requestUrl,
+            error: null
+          });
+          toast.success('Verification Completed Successfully!');
         },
         onError: (error) => {
-          setVerificationState(prev => ({
+          setState(prev => ({
             ...prev,
             status: 'error',
             error: error.message
           }));
-
-          // Track operation performance
-          trackOperation('verification_error', performance.now() - startTime);
-        },
-        signal: abortControllerRef.current?.signal
+          toast.error(`Verification Failed: ${error.message}`);
+        }
       });
     } catch (error) {
-      // Centralized error handling
-      handleError(error);
-      
-      setVerificationState(prev => ({
-        ...prev,
+      // Handle unexpected errors
+      setState({
         status: 'error',
+        requestUrl: '',
+        proofs: [],
         error: error instanceof Error ? error.message : 'Unknown error'
-      }));
+      });
+      toast.error('Verification process encountered an error');
     }
-  }, [handleError, trackOperation]);
+  }, []);
 
-  // Memoized derived values
+  // Memoized verification details
   const verificationDetails = useMemo(() => {
-    if (verificationState.status === 'success') {
+    if (state.status === 'success') {
       return {
-        totalProofs: verificationState.proofs.length,
-        verificationTime: new Date().toLocaleString()
+        proofCount: state.proofs.length,
+        verifiedAt: new Date().toLocaleString()
       };
     }
     return null;
-  }, [verificationState.status, verificationState.proofs]);
+  }, [state.status, state.proofs]);
 
-  // Render optimization
-  const renderContent = useCallback(() => {
-    switch(verificationState.status) {
+  // Render based on verification status
+  const renderVerificationContent = () => {
+    switch (state.status) {
       case 'loading':
-        return (
-          <div className="animate-pulse">
-            <div className="h-10 bg-gray-300 rounded"></div>
-          </div>
-        );
+        return <div className="animate-pulse">Verifying...</div>;
       case 'success':
         return (
           <div className="space-y-4">
-            {verificationState.requestUrl && (
+            {state.requestUrl && (
               <div className="flex justify-center">
-                <QRCode value={verificationState.requestUrl} />
+                <QRCode value={state.requestUrl} />
               </div>
             )}
             {verificationDetails && (
-              <div>
-                <p>Proofs: {verificationDetails.totalProofs}</p>
-                <p>Verified at: {verificationDetails.verificationTime}</p>
+              <div className="text-center">
+                <p>Proofs Collected: {verificationDetails.proofCount}</p>
+                <p>Verified at: {verificationDetails.verifiedAt}</p>
               </div>
             )}
           </div>
         );
       case 'error':
         return (
-          <div className="text-red-500">
-            {verificationState.error}
+          <div className="text-red-500 text-center">
+            {state.error || 'Verification Failed'}
           </div>
         );
       default:
         return null;
     }
-  }, [verificationState, verificationDetails]);
-
-  // Render with performance tracking
-  trackRender();
+  };
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <div className="container mx-auto">
-        <button 
-          onClick={getVerificationReq}
-          disabled={verificationState.status === 'loading'}
-          className="w-full btn btn-primary"
-        >
-          {verificationState.status === 'loading' 
-            ? 'Verifying...' 
-            : 'Start Verification'}
-        </button>
+    <div className="container mx-auto max-w-md p-4">
+      <button 
+        onClick={initiateVerification}
+        disabled={state.status === 'loading'}
+        className={`
+          w-full p-3 rounded-lg transition-all 
+          ${state.status === 'loading' 
+            ? 'bg-gray-400 cursor-not-allowed' 
+            : 'bg-blue-500 hover:bg-blue-600 text-white'
+          }
+        `}
+      >
+        {state.status === 'loading' ? 'Verifying...' : 'Start Verification'}
+      </button>
 
-        {renderContent()}
-
-        <ToastContainer />
-        
-        {/* Error Boundary Fallback */}
-        <ErrorFallback />
-      </div>
-    </Suspense>
+      {renderVerificationContent()}
+      <ToastContainer />
+    </div>
   );
 }
 
-export default React.memo(ReclaimDemo);
+// Memoize the component to prevent unnecessary re-renders
+export default React.memo(ReclaimVerificationDemo);
