@@ -8,28 +8,6 @@ import React, {
 import dynamic from 'next/dynamic';
 import { toast, ToastContainer } from 'react-toastify';
 
-/**
- * Reclaim Protocol Identity Verification Component
- * 
- * @description
- * This component provides a streamlined, secure identity verification process using Reclaim Protocol.
- * 
- * Key Features:
- * - Dynamic QR Code generation for identity verification
- * - Comprehensive error handling
- * - Performance-optimized state management
- * - Real-time verification status tracking
- * 
- * Workflow:
- * 1. User initiates verification
- * 2. QR Code generated for mobile verification
- * 3. Proofs collected and displayed upon successful verification
- * 
- * @requires 
- * - Reclaim Protocol SDK
- * - react-toastify for notifications
- * - Tailwind CSS for styling
- */
 function ReclaimVerificationDemo() {
   // Verification state management
   const [state, setState] = useState({
