@@ -32,7 +32,7 @@ function ReclaimVerificationDemo() {
       const reclaimRequest = await ReclaimProofRequest.init(
         process.env.NEXT_PUBLIC_APP_ID,
         process.env.NEXT_PUBLIC_APP_SECRET,
-        process.env.NEXT_PUBLIC_PROVIDER_ID
+        process.env.PROVIDER_ID
       );
 
       const requestUrl = await reclaimRequest.getRequestUrl();
