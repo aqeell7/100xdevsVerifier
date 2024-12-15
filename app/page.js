@@ -30,7 +30,7 @@ function ReclaimVerificationDemo() {
 
     try {
       const reclaimRequest = await ReclaimProofRequest.init(
-        process.env.NEXT_PUBLIC_APP_ID,
+        process.env.APP_ID,
         process.env.APP_SECRET,
         process.env.PROVIDER_ID
       );
