@@ -8,6 +8,23 @@ const CONTRACT_ADDRESS = '0x...'; // Your deployed contract address
 export default function MintNFT() {
   const [account, setAccount] = useState('');
 
+  // Connect to MetaMask
+  const connectWallet = async () => {
+    if (window.ethereum) {
+      try {
+        // Request account access
+        const accounts = await window.ethereum.request({ 
+          method: 'eth_requestAccounts' 
+        });
+        setAccount(accounts[0]);
+      } catch (error) {
+        console.error("Failed to connect wallet", error);
+      }
+    } else {
+      alert('MetaMask not detected. Please install MetaMask.');
+    }
+  };
+
   // Mint NFT function
   const mintNFT = async () => {
     // Ensure MetaMask is connected
