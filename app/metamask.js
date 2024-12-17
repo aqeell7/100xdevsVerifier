@@ -44,8 +44,7 @@ export default function MintNFT() {
         signer
       );
 
-      // Mint price (should match contract's mintPrice)
-      const mintPrice = ethers.utils.parseEther('0.1');
+     
 
       // Call mint function
       const tx = await contract.mintNFT({
