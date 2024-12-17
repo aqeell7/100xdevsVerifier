@@ -46,11 +46,7 @@ export default function MintNFT() {
 
      
 
-      // Call mint function
-      const tx = await contract.mintNFT({
-        value: mintPrice
-      });
-
+      
       // Wait for transaction to be mined
       const receipt = await tx.wait();
 
