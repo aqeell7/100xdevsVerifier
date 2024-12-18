@@ -17,9 +17,6 @@ contract HundredXDevsNFT is ERC721, Ownable {
     // Base IPFS URI for metadata
     string private _baseTokenURI;
 
-    // Mint price (kept as 0 as per previous discussion)
-    uint256 public constant MINT_PRICE = 0;
-
     // Events
     event NFTMinted(address indexed minter, uint256 tokenId);
     event BaseURIChanged(string newBaseURI);
@@ -61,7 +58,8 @@ contract HundredXDevsNFT is ERC721, Ownable {
 
     // Override tokenURI to return IPFS metadata link
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
-        require(_exists(tokenId), "Token does not exist");
+        // Use _ownerOf instead of _exists
+        require(_ownerOf(tokenId) != address(0), "Token does not exist");
         
         // Construct full metadata path
         return string(abi.encodePacked(
@@ -82,4 +80,8 @@ contract HundredXDevsNFT is ERC721, Ownable {
         return _baseTokenURI;
     }
 
+    // Function to get total minted NFTs
+    function totalMinted() external view returns (uint256) {
+        return _nextTokenId - 1;
+    }
 }
