@@ -45,17 +45,7 @@ contract HundredXDevsNFT is ERC721, Ownable {
         emit NFTMinted(msg.sender, tokenId);
     }
 
-    // Batch minting function to reduce overall gas costs
-    function batchMint(uint256 quantity) external {
-        require(_nextTokenId + quantity <= MAX_SUPPLY, "Exceeds max supply");
-
-        for (uint256 i = 0; i < quantity; i++) {
-            uint256 tokenId = _nextTokenId;
-            _nextTokenId++;
-            _safeMint(msg.sender, tokenId);
-        }
-    }
-
+   
     // Override tokenURI to return IPFS metadata link
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
         // Use _ownerOf instead of _exists
