@@ -80,8 +80,5 @@ contract HundredXDevsNFT is ERC721, Ownable {
         return _baseTokenURI;
     }
 
-    // Function to get total minted NFTs
-    function totalMinted() external view returns (uint256) {
-        return _nextTokenId - 1;
-    }
+  
 }
