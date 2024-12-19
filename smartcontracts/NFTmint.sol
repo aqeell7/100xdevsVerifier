@@ -8,9 +8,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract HundredXDevsNFT is ERC721, Ownable {
     using Strings for uint256;
 
-    // Maximum supply of NFTs
-    uint256 public constant MAX_SUPPLY = 100000;
-
+    
     // Current token ID tracker
     uint256 private _nextTokenId = 1;
 
@@ -70,5 +68,4 @@ contract HundredXDevsNFT is ERC721, Ownable {
         return _baseTokenURI;
     }
 
-  
 }
