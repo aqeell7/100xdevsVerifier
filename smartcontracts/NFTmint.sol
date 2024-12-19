@@ -4,22 +4,16 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-
 contract HundredXDevsNFT is ERC721, Ownable {
-    using Strings for uint256;
-
-    
-    // Current token ID tracker
+    // Current token ID tracker (more gas efficient than using Counters)
     uint256 private _nextTokenId = 1;
 
-    // Base IPFS URI for metadata
+    // Base URI for metadata
     string private _baseTokenURI;
 
     // Events
     event NFTMinted(address indexed minter, uint256 tokenId);
-    event BaseURIChanged(string newBaseURI);
 
-    // Constructor to set initial metadata base URI
     constructor(string memory initialBaseURI) 
         ERC721("100xDevs", "100X") 
         Ownable(msg.sender) 
@@ -27,45 +21,20 @@ contract HundredXDevsNFT is ERC721, Ownable {
         _baseTokenURI = initialBaseURI;
     }
 
-    // Mint function with minimal gas consumption
+    // Simplified mint function
     function mintNFT() external {
-        // Check total supply limit
-        require(_nextTokenId <= MAX_SUPPLY, "All NFTs minted");
-
-        // Get the current token ID and increment
-        uint256 tokenId = _nextTokenId;
-        _nextTokenId++;
-
-        // Mint the NFT
+        uint256 tokenId = _nextTokenId++;
         _safeMint(msg.sender, tokenId);
-
-        // Emit minting event
         emit NFTMinted(msg.sender, tokenId);
     }
 
-   
-    // Override tokenURI to return IPFS metadata link
-    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
-        // Use _ownerOf instead of _exists
-        require(_ownerOf(tokenId) != address(0), "Token does not exist");
-        
-        // Construct full metadata path
-        return string(abi.encodePacked(
-            _baseTokenURI, 
-            tokenId.toString(), 
-            ".json"
-        ));
-    }
-
-    // Function to update base URI (in case IPFS link changes)
-    function setBaseURI(string memory baseURI) external onlyOwner {
-        _baseTokenURI = baseURI;
-        emit BaseURIChanged(baseURI);
-    }
-
-    // Function to get current base URI
-    function getBaseURI() external view returns (string memory) {
+    // Override base URI
+    function _baseURI() internal view override returns (string memory) {
         return _baseTokenURI;
     }
 
+    // Update base URI if needed
+    function setBaseURI(string memory baseURI) external onlyOwner {
+        _baseTokenURI = baseURI;
+    }
 }
