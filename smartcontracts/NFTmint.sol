@@ -33,8 +33,5 @@ contract HundredXDevsNFT is ERC721, Ownable {
         return _baseTokenURI;
     }
 
-    // Update base URI if needed
-    function setBaseURI(string memory baseURI) external onlyOwner {
-        _baseTokenURI = baseURI;
-    }
+    
 }
