@@ -18,7 +18,7 @@ function ReclaimVerificationDemo() {
   // Enhanced verification request with improved error handling
   const initiateVerification = useCallback(async () => {
     // Validate environment variables upfront
-    const requiredEnvs = ['NEXT_PUBLIC_APP_ID', 'NEXT_PUBLIC_APP_SECRET', 'NEXT_PUBLIC_PROVIDER_ID'];
+    const requiredEnvs = ['APP_ID', 'APP_SECRET', 'PROVIDER_ID'];
     const missingEnvs = requiredEnvs.filter(env => !process.env[env]);
     
     if (missingEnvs.length) {
