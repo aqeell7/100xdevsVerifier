@@ -1,13 +1,13 @@
 'use client'
 
-export default function Error({ error }) {
+export default function Error({ error, reset }) {
   return (
-    <div className="grid place-items-center min-h-screen bg-gray-50 text-center p-4">
+    <div className="grid place-items-center min-h-screen bg-white text-center p-4">
       <div>
-        {/* Minimal Error Icon */}
+        {/* Enhanced Error Icon */}
         <svg 
           xmlns="http://www.w3.org/2000/svg" 
-          className="h-8 w-8 text-red-600 mb-4" 
+          className="h-8 w-8 text-rose-500 mb-4" 
           viewBox="0 0 20 20" 
           fill="currentColor"
         >
@@ -18,9 +18,14 @@ export default function Error({ error }) {
           />
         </svg>
 
-        <h2 className="text-lg font-medium text-red-600 mb-4">Something went wrong</h2>
+        <h2 className="text-lg font-medium text-rose-500 mb-4">Oops! Something went wrong</h2>
 
-       
+        <button 
+          onClick={reset}
+          className="px-4 py-2 bg-indigo-500 text-white font-semibold rounded shadow-sm hover:bg-indigo-600 focus:ring-2 focus:ring-indigo-400 focus:outline-none"
+        >
+          Try again
+        </button>
       </div>
     </div>
   )
