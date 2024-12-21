@@ -36,43 +36,29 @@ export default function MintNFT() {
 
   // Mint NFT function
   const mintNFT = async () => {
-    // Ensure wallet is connected
     if (!account) {
       await connectWallet();
     }
 
     try {
-      // Create Web3 provider and signer
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
-      // Create contract instance
-      const contract = new ethers.Contract(
-        CONTRACT_ADDRESS, 
-        CONTRACT_ABI, 
-        signer
-      );
-
-      // Set minting state
       setIsMinting(true);
 
-      // Call mint function (no value needed as it's free)
       const tx = await contract.mintNFT();
-
-      // Wait for transaction to be mined
       const receipt = await tx.wait();
 
-      // Update state with minted NFT details
       setMintedNFT({
-        transactionHash: receipt.transactionHash
+        transactionHash: receipt.transactionHash,
       });
 
       console.log('NFT Minted! Transaction hash:', receipt.transactionHash);
     } catch (error) {
-      console.error("NFT Minting failed", error);
-      alert("Failed to mint NFT. Please try again.");
+      console.error('NFT Minting failed', error);
+      alert('Failed to mint NFT. Please try again.');
     } finally {
-      // Reset minting state
       setIsMinting(false);
     }
   };
