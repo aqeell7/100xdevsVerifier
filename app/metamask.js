@@ -1,18 +1,9 @@
 import { useState } from 'react';
 import { ethers } from 'ethers';
 
-// Contract details to be replaced with your actual deployment
-const CONTRACT_ABI = [
-  // Mint function ABI
-  {
-    "inputs": [],
-    "name": "mintNFT",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  }
-];
-const CONTRACT_ADDRESS = '0x...'; // Your deployed contract address
+// Environment variables for contract details
+const CONTRACT_ABI = JSON.parse(process.env.NEXT_PUBLIC_CONTRACT_ABI || '[]');
+const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 
 export default function MintNFT() {
   // State to track connected account and minting status
