@@ -1,14 +1,10 @@
 import { useState } from 'react';
 import { ethers } from 'ethers';
+import contractABI from '../config/contractABI.json';
 
-// Environment variables for contract details
-let CONTRACT_ABI = [];
-try {
-  CONTRACT_ABI = JSON.parse(process.env.NEXT_PUBLIC_CONTRACT_ABI || '[]');
-} catch (error) {
-  console.error('Failed to parse contract ABI from environment variables:', error);
-}
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
+
+const CONTRACT_ABI = contractABI;
+const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '';
 
 export default function MintNFT() {
   // State to track connected account and minting status
