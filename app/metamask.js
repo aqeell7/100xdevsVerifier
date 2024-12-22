@@ -66,6 +66,10 @@ export default function MintNFT() {
     }
   };
 
+  const getOpenSeaURL = (tokenId) => {
+    return `${OPENSEA_BASE_URL}${CONTRACT_ADDRESS}/${tokenId}`;
+  };
+
   // Render component UI
   return (
     <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
