@@ -6,6 +6,9 @@ import contractABI from '../config/contractABI.json';
 const CONTRACT_ABI = contractABI;
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '';
 
+const ETHERSCAN_BASE_URL = 'https://sepolia.etherscan.io/tx/';
+const OPENSEA_BASE_URL = 'https://testnets.opensea.io/assets/sepolia/';
+
 export default function MintNFT() {
   // State to track connected account and minting status
   const [account, setAccount] = useState('');
