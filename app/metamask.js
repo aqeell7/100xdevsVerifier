@@ -5,8 +5,6 @@ import contractABI from '@/config/contractABI.json';
 
 const CONTRACT_ABI = contractABI;
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '';
-
-// Constants for network-specific links
 const ETHERSCAN_BASE_URL = 'https://sepolia.etherscan.io/tx/';
 const OPENSEA_BASE_URL = 'https://testnets.opensea.io/assets/sepolia/';
 
@@ -17,13 +15,10 @@ export default function MintNFT() {
   const [error, setError] = useState('');
 
   if (!CONTRACT_ADDRESS || CONTRACT_ABI.length === 0) {
-    console.error('Contract details are missing. Please check your environment variables.');
     return (
-      <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold mb-4 text-red-600">Configuration Error</h2>
-        <p className="text-gray-700">
-          Contract details are missing. Please ensure your environment variables are set correctly.
-        </p>
+      <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg">
+        <h2 className="text-2xl font-bold text-red-600 mb-4">Configuration Error</h2>
+        <p className="text-gray-700">Contract details are missing. Please check environment variables.</p>
       </div>
     );
   }
@@ -31,15 +26,12 @@ export default function MintNFT() {
   const connectWallet = async () => {
     try {
       setError('');
-      
       if (!window.ethereum) {
         throw new Error('MetaMask not found. Please install MetaMask browser extension.');
       }
-
       const accounts = await window.ethereum.request({
         method: 'eth_requestAccounts',
       });
-      
       setAccount(accounts[0]);
     } catch (error) {
       console.error('Wallet connection failed:', error);
@@ -50,34 +42,20 @@ export default function MintNFT() {
   const mintNFT = async () => {
     try {
       setError('');
-      
       if (!account) {
         await connectWallet();
         return;
       }
-
       if (!window.ethereum) {
         throw new Error('MetaMask not found. Please install MetaMask browser extension.');
       }
-
       setIsMinting(true);
-
       const provider = new BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       const contract = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-
-      // Initiate minting
       const tx = await contract.mintNFT();
-      console.log('Minting transaction sent:', tx.hash);
-      
-      // Wait for transaction confirmation
       const receipt = await tx.wait();
-      console.log('Transaction confirmed:', receipt);
-
-      // Create interface instance for parsing logs
       const iface = new Interface(CONTRACT_ABI);
-      
-      // Find and parse the NFTMinted event
       let tokenId;
       for (const log of receipt.logs) {
         try {
@@ -85,31 +63,18 @@ export default function MintNFT() {
             topics: log.topics,
             data: log.data
           });
-          
           if (parsedLog.name === 'NFTMinted') {
             tokenId = parsedLog.args.tokenId.toString();
             break;
           }
         } catch (e) {
-          // Skip logs that aren't our event
           continue;
         }
       }
-
-      if (!tokenId) {
-        console.warn('TokenId not found in transaction logs');
-      }
-
       setMintedNFT({
         transactionHash: receipt.hash,
         tokenId: tokenId
       });
-
-      console.log('NFT Minted Successfully!', {
-        transactionHash: receipt.hash,
-        tokenId: tokenId
-      });
-
     } catch (error) {
       console.error('NFT Minting failed:', error);
       setError(error.message || 'Failed to mint NFT. Please try again.');
@@ -118,77 +83,92 @@ export default function MintNFT() {
     }
   };
 
-  const getOpenSeaURL = (tokenId) => {
-    return `${OPENSEA_BASE_URL}${CONTRACT_ADDRESS}/${tokenId}`;
-  };
+  const getOpenSeaURL = (tokenId) => `${OPENSEA_BASE_URL}${CONTRACT_ADDRESS}/${tokenId}`;
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-4">100xDevs NFT Minting</h2>
+    <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg">
+      <h2 className="text-2xl font-bold text-center mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        100xDevs NFT Minting
+      </h2>
 
-      {error && (
-        <div className="mb-4 p-4 bg-red-100 rounded">
-          <p className="text-red-800">{error}</p>
-        </div>
-      )}
+      <div className="space-y-6">
+        {error && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-700 text-sm">{error}</p>
+          </div>
+        )}
 
-      {!account ? (
-        <button
-          onClick={connectWallet}
-          className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
-        >
-          Connect Wallet
-        </button>
-      ) : (
-        <div>
-          <p className="mb-4 text-gray-700">
-            Connected Wallet: {account.substring(0, 6)}...{account.substring(account.length - 4)}
-          </p>
-
+        {!account ? (
           <button
-            onClick={mintNFT}
-            disabled={isMinting}
-            className={`w-full py-2 rounded ${
-              isMinting ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500 text-white hover:bg-green-600'
-            }`}
+            onClick={connectWallet}
+            className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white py-3 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity"
           >
-            {isMinting ? 'Minting...' : 'Mint 100xDevs NFT'}
+            Connect Wallet
           </button>
-
-          {mintedNFT && (
-            <div className="mt-4 p-4 bg-green-100 rounded">
-              <p className="text-green-800 font-semibold mb-3">NFT Minted Successfully!</p>
-              <div className="space-y-2">
-                <p className="text-sm text-gray-600 mb-2">
-                  Token ID: {mintedNFT.tokenId}
-                </p>
-                <a
-                  href={`${ETHERSCAN_BASE_URL}${mintedNFT.transactionHash}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block text-blue-600 hover:underline"
-                >
-                  View Transaction on Etherscan
-                </a>
-                
-                {mintedNFT.tokenId && (
-                  <a
-                    href={getOpenSeaURL(mintedNFT.tokenId)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block text-blue-600 hover:underline"
-                  >
-                    View NFT on OpenSea
-                  </a>
-                )}
-                <p className="text-xs text-gray-500 mt-2">
-                  Note: It may take a few minutes for the NFT to appear on OpenSea
-                </p>
-              </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="p-3 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-600">
+                Connected: {account.substring(0, 6)}...{account.substring(account.length - 4)}
+              </p>
             </div>
-          )}
-        </div>
-      )}
+
+            <button
+              onClick={mintNFT}
+              disabled={isMinting}
+              className={`w-full py-3 px-4 rounded-lg font-medium ${
+                isMinting 
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                  : 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:opacity-90 transition-opacity'
+              }`}
+            >
+              {isMinting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                  </svg>
+                  Minting in Progress...
+                </span>
+              ) : (
+                'Mint 100xDevs NFT'
+              )}
+            </button>
+
+            {mintedNFT && (
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg space-y-3">
+                <p className="font-medium text-green-800">NFT Minted Successfully! 🎉</p>
+                <div className="space-y-2 text-sm">
+                  <p className="text-gray-600">Token ID: {mintedNFT.tokenId}</p>
+                  <div className="space-y-2 pt-2">
+                    <a
+                      href={`${ETHERSCAN_BASE_URL}${mintedNFT.transactionHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-blue-600 hover:text-blue-700 transition-colors"
+                    >
+                      View on Etherscan →
+                    </a>
+                    {mintedNFT.tokenId && (
+                      <a
+                        href={getOpenSeaURL(mintedNFT.tokenId)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block text-blue-600 hover:text-blue-700 transition-colors"
+                      >
+                        View on OpenSea →
+                      </a>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-3">
+                    Note: It may take a few minutes for the NFT to appear on OpenSea
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
