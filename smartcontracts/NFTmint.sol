@@ -5,48 +5,36 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract HundredXDevsNFT is ERC721, Ownable {
-    // Current token ID tracker
+    // Current token ID tracker (more gas efficient than using Counters)
     uint256 private _nextTokenId = 1;
 
     // Base URI for metadata
     string private _baseTokenURI;
-    
-    // Contract URI for collection metadata
-    string private _contractURI;
 
     // Events
     event NFTMinted(address indexed minter, uint256 tokenId);
 
-    constructor(string memory initialBaseURI, string memory initialContractURI) 
+    constructor(string memory initialBaseURI) 
         ERC721("100xDevs", "100X") 
         Ownable(msg.sender) 
     {
         _baseTokenURI = initialBaseURI;
-        _contractURI = initialContractURI;
     }
 
+    // Simplified mint function
     function mintNFT() external {
         uint256 tokenId = _nextTokenId++;
         _safeMint(msg.sender, tokenId);
         emit NFTMinted(msg.sender, tokenId);
     }
 
+    // Override base URI
     function _baseURI() internal view override returns (string memory) {
         return _baseTokenURI;
     }
 
-    // Function to get contract URI
-    function contractURI() public view returns (string memory) {
-        return _contractURI;
-    }
-
-    // Update base URI
+    // Update base URI if needed
     function setBaseURI(string memory baseURI) external onlyOwner {
         _baseTokenURI = baseURI;
-    }
-
-    // Update contract URI
-    function setContractURI(string memory newContractURI) external onlyOwner {
-        _contractURI = newContractURI;
     }
 }
