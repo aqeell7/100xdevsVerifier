@@ -1,9 +1,9 @@
 export function Button({ 
   className = '', 
   variant = 'default', 
-  size = 'md',
-  isLoading = false,
-  disabled = false,
+  size = 'md', 
+  isLoading = false, 
+  disabled = false, 
   children, 
   ...props 
 }) {
@@ -11,21 +11,20 @@ export function Button({
   
   const variants = {
     default: 'bg-gray-900 text-white hover:bg-gray-800',
-    
   };
 
   const sizes = {
     sm: 'h-9 px-3 text-sm',
     md: 'h-10 px-4',
-    lg: 'h-11 px-8 text-lg'
+    lg: 'h-11 px-8 text-lg',
   };
 
   return (
     <button
       className={`
-        ${baseStyles}
-        ${variants[variant]}
-        ${sizes[size]}
+        ${baseStyles} 
+        ${variants[variant] || variants.default} 
+        ${sizes[size] || sizes.md} 
         ${className}
       `}
       disabled={disabled || isLoading}
@@ -36,7 +35,9 @@ export function Button({
           <Loader size="sm" className="mr-2" />
           Loading...
         </>
-      ) : children}
+      ) : (
+        children
+      )}
     </button>
   );
 }
