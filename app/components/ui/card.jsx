@@ -7,9 +7,9 @@ export function Card({
   ...props 
 }) {
   const variants = {
-    default: 'bg-white shadow-lg',
-    outlined: 'bg-white border border-gray-300',
-    elevated: 'bg-white shadow-2xl',
+    default: 'bg-white shadow-lg dark:bg-gray-800 dark:text-white',
+    outlined: 'bg-white border border-gray-300 dark:bg-gray-800 dark:border-gray-700 dark:text-white',
+    elevated: 'bg-white shadow-2xl dark:bg-gray-800 dark:shadow-gray-900 dark:text-white',
   };
 
   return (
