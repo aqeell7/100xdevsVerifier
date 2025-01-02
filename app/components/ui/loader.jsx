@@ -5,6 +5,28 @@ export function Loader({ size = 'md', animationDuration = '1s', className = '' }
     lg: 'h-8 w-8',
   };
 
+  if (variant === 'dots') {
+    return (
+      <div
+        className={`flex space-x-1 items-center ${className}`}
+        style={{ animationDuration }}
+      >
+        <div
+          className={`${sizeClasses[size] || sizeClasses.md} bg-current rounded-full animate-bounce`}
+          style={{ animationDuration }}
+        ></div>
+        <div
+          className={`${sizeClasses[size] || sizeClasses.md} bg-current rounded-full animate-bounce`}
+          style={{ animationDuration: `calc(${animationDuration} * 1.2)` }}
+        ></div>
+        <div
+          className={`${sizeClasses[size] || sizeClasses.md} bg-current rounded-full animate-bounce`}
+          style={{ animationDuration: `calc(${animationDuration} * 1.4)` }}
+        ></div>
+      </div>
+    );
+  }
+
   return (
     <svg
       className={`animate-spin ${sizeClasses[size] || sizeClasses.md} ${className}`}
