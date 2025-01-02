@@ -1,4 +1,9 @@
-export function Loader({ size = 'md', animationDuration = '1s', className = '' }) {
+export function Loader({
+  size = 'md',
+  animationDuration = '1s',
+  variant = 'spinner',
+  className = '',
+}) {
   const sizeClasses = {
     sm: 'h-4 w-4',
     md: 'h-6 w-6',
@@ -27,6 +32,26 @@ export function Loader({ size = 'md', animationDuration = '1s', className = '' }
     );
   }
 
+  if (variant === 'bars') {
+    return (
+      <div className={`flex space-x-1 items-center ${className}`}>
+        <div
+          className={`${sizeClasses[size] || sizeClasses.md} bg-current animate-pulse`}
+          style={{ animationDuration }}
+        ></div>
+        <div
+          className={`${sizeClasses[size] || sizeClasses.md} bg-current animate-pulse`}
+          style={{ animationDuration: `calc(${animationDuration} * 1.2)` }}
+        ></div>
+        <div
+          className={`${sizeClasses[size] || sizeClasses.md} bg-current animate-pulse`}
+          style={{ animationDuration: `calc(${animationDuration} * 1.4)` }}
+        ></div>
+      </div>
+    );
+  }
+
+  // Default to spinner variant
   return (
     <svg
       className={`animate-spin ${sizeClasses[size] || sizeClasses.md} ${className}`}
