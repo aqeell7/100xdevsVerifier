@@ -1,4 +1,4 @@
-export function Loader({ size = 'md', className = '' }) {
+export function Loader({ size = 'md', animationDuration = '1s', className = '' }) {
   const sizeClasses = {
     sm: 'h-4 w-4',
     md: 'h-6 w-6',
@@ -8,6 +8,7 @@ export function Loader({ size = 'md', className = '' }) {
   return (
     <svg
       className={`animate-spin ${sizeClasses[size] || sizeClasses.md} ${className}`}
+      style={{ animationDuration }}
       viewBox="0 0 24 24"
     >
       <circle
